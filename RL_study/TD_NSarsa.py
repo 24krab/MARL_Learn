@@ -5,12 +5,16 @@ from tqdm import tqdm  # tqdm是显示循环进度条的库
 
 
 class CliffWalkingEnv:
-    def __init__(self, ncol, nrow):
+    def __init__(self, ncol, nrow, step_limit):
         self.nrow = nrow
         self.ncol = ncol
         self.x = 0  # 记录当前智能体位置的横坐标
         self.y = self.nrow - 1  # 记录当前智能体位置的纵坐标
-
+        self.step_count = step_limit if step_limit > 0 else np.inf
+        
+    def clr_step_count(self):
+        self.step_count = 0
+    
     def step(self, action):  # 外部调用这个函数来改变当前位置
         # 4种动作, change[0]:上, change[1]:下, change[2]:左, change[3]:右。坐标系原点(0,0)
         # 定义在左上角
@@ -24,6 +28,11 @@ class CliffWalkingEnv:
             done = True
             if self.x != self.ncol - 1:
                 reward = -100
+        #尝试加入限制步数，防止无限循环
+        if self.step_count > 500:
+            done = True
+            reward = -1000
+        self.step_count += 1
         return next_state, reward, done
 
     def reset(self):  # 回归初始状态,坐标轴原点在左上角
@@ -33,7 +42,7 @@ class CliffWalkingEnv:
     
 class nstep_Sarsa:
     """ n步Sarsa算法 """
-    def __init__(self, n, ncol, nrow, epsilon, alpha, gamma, n_action=4):
+    def __init__(self, n, ncol, nrow, epsilon, alpha, gamma, n_action=4, decay=0.95):
         self.Q_table = np.zeros([nrow * ncol, n_action])
         self.n_action = n_action
         self.alpha = alpha
@@ -43,10 +52,12 @@ class nstep_Sarsa:
         self.state_list = []  # 保存之前的状态
         self.action_list = []  # 保存之前的动作
         self.reward_list = []  # 保存之前的奖励
+        self.decay = decay
 
     def take_action(self, state):
         if np.random.random() < self.epsilon:
             action = np.random.randint(self.n_action)
+            self.epsilon *= self.decay
         else:
             action = np.argmax(self.Q_table[state])
         return action
@@ -84,14 +95,16 @@ class nstep_Sarsa:
 
 ncol = 12
 nrow = 4
-env = CliffWalkingEnv(ncol, nrow)
+step_limit = 1000
+env = CliffWalkingEnv(ncol, nrow, step_limit)
 
 np.random.seed(0)
 n_step = 5  # 5步Sarsa算法
 alpha = 0.1
 epsilon = 0.1
 gamma = 0.9
-agent = nstep_Sarsa(n_step, ncol, nrow, epsilon, alpha, gamma)
+decay = 1
+agent = nstep_Sarsa(n_step, ncol, nrow, epsilon, alpha, gamma, decay=decay)
 num_episodes = 500  # 智能体在环境中运行的序列的数量
 
 return_list = []  # 记录每一条序列的回报
@@ -101,6 +114,7 @@ for i in range(10):  # 显示10个进度条
         for i_episode in range(int(num_episodes / 10)):  # 每个进度条的序列数
             episode_return = 0
             state = env.reset()
+            env.clr_step_count()
             action = agent.take_action(state)
             done = False
             while not done:
@@ -127,3 +141,21 @@ plt.xlabel('Episodes')
 plt.ylabel('Returns')
 plt.title('5-step Sarsa on {}'.format('Cliff Walking'))
 plt.show()
+
+def print_agent(agent, env, action_meaning, disaster=[], end=[]):
+    for i in range(env.nrow):
+        for j in range(env.ncol):
+            if (i * env.ncol + j) in disaster:
+                print('****', end=' ')
+            elif (i * env.ncol + j) in end:
+                print('EEEE', end=' ')
+            else:
+                a = agent.best_action(i * env.ncol + j)
+                pi_str = ''
+                for k in range(len(action_meaning)):
+                    pi_str += action_meaning[k] if a[k] > 0 else 'o'
+                print(pi_str, end=' ')
+        print()
+action_meaning = ['^', 'v', '<', '>']
+print('5步Sarsa算法最终收敛得到的策略为：')
+print_agent(agent, env, action_meaning, list(range(37, 47)), [47])
