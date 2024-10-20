@@ -44,7 +44,7 @@ Pi_1 = {
     "s4-前往s5": 0.5,
     "s4-概率前往": 0.5,
 }
-# 策略2
+# 策略2,较差策略
 Pi_2 = {
     "s1-保持s1": 0.6,
     "s1-前往s2": 0.4,
@@ -55,7 +55,7 @@ Pi_2 = {
     "s4-前往s5": 0.1,
     "s4-概率前往": 0.9,
 }
-#策略3
+#策略3，较好策略
 Pi_3 = {
     "s1-保持s1": 0.1,
     "s1-前往s2": 0.9,
@@ -133,24 +133,43 @@ def sample(MDP, Pi, timestep_max, number):
 # print('第二条序列\n', episodes[1])
 # print('第五条序列\n', episodes[4])
 
-# # 对所有采样序列计算所有状态的价值
-# def MC(episodes, V, N, gamma):
-#     for episode in episodes:
-#         G = 0
-#         for i in range(len(episode) - 1, -1, -1):  #一个序列从后往前计算
-#             (s, a, r, s_next) = episode[i]
-#             G = r + gamma * G
-#             N[s] = N[s] + 1
-#             V[s] = V[s] + (G - V[s]) / N[s]
+# 对所有采样序列计算所有状态的价值
+def MC(episodes, V, N, gamma):
+    for episode in episodes:
+        G = 0
+        for i in range(len(episode) - 1, -1, -1):  #一个序列从后往前计算
+            (s, a, r, s_next) = episode[i]
+            G = r + gamma * G
+            N[s] = N[s] + 1
+            V[s] = V[s] + (G - V[s]) / N[s]
 
+def res_V_N(V, N):
+    ''' 重置状态价值和状态访问次数 '''
+    for s in V.keys():
+        V[s] = 0
+        N[s] = 0
 
 # timestep_max = 20
 # # 采样1000次,可以自行修改
-# episodes = sample(MDP, Pi_3, timestep_max, 1000)
+# episodes_1 = sample(MDP, Pi_1, timestep_max, 1000)
+# episodes_2 = sample(MDP, Pi_2, timestep_max, 1000)
+# episodes_3 = sample(MDP, Pi_3, timestep_max, 1000)
 # gamma = 0.5
 # V = {"s1": 0, "s2": 0, "s3": 0, "s4": 0, "s5": 0}
 # N = {"s1": 0, "s2": 0, "s3": 0, "s4": 0, "s5": 0}
-# MC(episodes, V, N, gamma)
+# res_V_N(V, N)
+# MC(episodes_1, V, N, gamma)
+# print("当前策略：", Pi_1)
+# print("使用蒙特卡洛方法计算MDP的状态价值为\n", V)
+
+# res_V_N(V, N)
+# MC(episodes_2, V, N, gamma)
+# print("当前策略：", Pi_2)
+# print("使用蒙特卡洛方法计算MDP的状态价值为\n", V)
+
+# res_V_N(V, N)
+# MC(episodes_3, V, N, gamma)
+# print("当前策略：", Pi_3)
 # print("使用蒙特卡洛方法计算MDP的状态价值为\n", V)
 
 
@@ -277,8 +296,10 @@ class PolicyIteration:
                 break
         return self.v, self.pi
     
+
+gamma_dynopro = 0.9
     
-agent = PolicyIteration(MDP, Pi_1, 1e-6, 0.9)
+agent = PolicyIteration(MDP, Pi_1, 1e-6, gamma_dynopro)
 agent.policy_iteration()
 
 #价值迭代算法
@@ -356,5 +377,5 @@ class ValueIteration:
                     self.pi[s_a_opt] = 0
         return self.pi
     
-agent = ValueIteration(MDP, Pi_1,1e-6, 0.5)
+agent = ValueIteration(MDP, Pi_1,1e-6, gamma_dynopro)
 agent.value_iteration()

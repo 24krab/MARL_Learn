@@ -18,8 +18,9 @@ class BernoulliBandit:
             return 1
         else:
             return 0
-#np.random.seed(1)  # 设定随机种子,使实验具有可重复性
-K = 10
+
+np.random.seed(1)  # 设定随机种子,使实验具有可重复性
+K = 20
 bandit_10_arm = BernoulliBandit(K)
 print("随机生成了一个%d臂伯努利老虎机" % K)
 print("获奖概率最大的拉杆为%d号,其获奖概率为%.4f" %
@@ -98,7 +99,7 @@ class DecayingEpsilonGreedy(Solver):
 #使epsilon随时间呈指数衰减
 class ExponentialDecayingEpsilonGreedy(Solver):
     """ epsilon值随时间指数衰减的epsilon-贪婪算法,继承Solver类 """
-    def __init__(self, bandit, init_prob=1.0, decay_rate=0.2,init_epsilon=1.0):
+    def __init__(self, bandit, init_prob=1.0, decay_rate=0.1,init_epsilon=1.0):
         super(ExponentialDecayingEpsilonGreedy, self).__init__(bandit)
         self.estimates = np.array([init_prob] * self.bandit.K)
         self.decay_rate = decay_rate
@@ -178,39 +179,56 @@ def plot_results(solvers, solver_names):
     plt.legend()
     plt.show()
 
-#
 
+randomseed = 1  # 设定随机种子,使实验具有可重复性
+
+#
+np.random.seed(randomseed)
 epsilon_greedy_solver = EpsilonGreedy(bandit_10_arm, epsilon=0.01)
 epsilon_greedy_solver.run(5000)
 print('epsilon-贪婪算法的累积懊悔为：', epsilon_greedy_solver.regret)
 plot_results([epsilon_greedy_solver], ["EpsilonGreedy"])
 
-#np.random.seed(1)
+np.random.seed(randomseed)
 decaying_epsilon_greedy_solver = DecayingEpsilonGreedy(bandit_10_arm)
 decaying_epsilon_greedy_solver.run(5000)
 print('epsilon值衰减的贪婪算法的累积懊悔为：', decaying_epsilon_greedy_solver.regret)
 plot_results([decaying_epsilon_greedy_solver], ["DecayingEpsilonGreedy"])
 
-#np.random.seed(1)
+np.random.seed(randomseed)
 exponential_decaying_epsilon_greedy_solver = ExponentialDecayingEpsilonGreedy(bandit_10_arm)
 exponential_decaying_epsilon_greedy_solver.run(5000)
 print('epsilon值指数衰减的贪婪算法的累积懊悔为：', exponential_decaying_epsilon_greedy_solver.regret)
 plot_results([exponential_decaying_epsilon_greedy_solver], ["ExponentialDecayingEpsilonGreedy"])
 
-#np.random.seed(1)
+np.random.seed(randomseed)
 greedy_solver = Greedy(bandit_10_arm)
 greedy_solver.run(5000)
 print('完全贪婪算法的累积懊悔为：', greedy_solver.regret)
 plot_results([greedy_solver], ["Greedy"])
 
+np.random.seed(randomseed)
 coef = 1  # 控制不确定性比重的系数
 UCB_solver = UCB(bandit_10_arm, coef)
 UCB_solver.run(5000)
 print('上置信界算法的累积懊悔为：', UCB_solver.regret)
 plot_results([UCB_solver], ["UCB"])
 
+np.random.seed(randomseed)
 thompson_sampling_solver = ThompsonSampling(bandit_10_arm)
 thompson_sampling_solver.run(5000)
 print('汤普森采样算法的累积懊悔为：', thompson_sampling_solver.regret)
 plot_results([thompson_sampling_solver], ["ThompsonSampling"])
 
+
+#对比不同的epsilon值
+np.random.seed(randomseed)
+epsilons = [1e-4, 0.01, 0.1, 0.25, 0.5]
+epsilon_greedy_solver_list = [
+    EpsilonGreedy(bandit_10_arm, epsilon=e) for e in epsilons
+]
+epsilon_greedy_solver_names = ["epsilon={}".format(e) for e in epsilons]
+for solver in epsilon_greedy_solver_list:
+    solver.run(5000)
+
+plot_results(epsilon_greedy_solver_list, epsilon_greedy_solver_names)

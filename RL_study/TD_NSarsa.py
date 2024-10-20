@@ -95,7 +95,7 @@ class nstep_Sarsa:
 
 ncol = 12
 nrow = 4
-step_limit = 1000
+step_limit = 5000
 env = CliffWalkingEnv(ncol, nrow, step_limit)
 
 np.random.seed(0)
@@ -103,7 +103,7 @@ n_step = 5  # 5步Sarsa算法
 alpha = 0.1
 epsilon = 0.1
 gamma = 0.9
-decay = 1
+decay = 0.95
 agent = nstep_Sarsa(n_step, ncol, nrow, epsilon, alpha, gamma, decay=decay)
 num_episodes = 500  # 智能体在环境中运行的序列的数量
 
