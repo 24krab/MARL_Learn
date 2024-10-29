@@ -14,7 +14,7 @@ class ReplayBuffer:
     ''' 经验回放池 '''
     def __init__(self, capacity):
         self.buffer = collections.deque(maxlen=capacity)  # 队列,先进先出
-
+                                                        
     def add(self, state, action, reward, next_state, done):  # 将数据加入buffer
         self.buffer.append((state, action, reward, next_state, done))
 
@@ -62,6 +62,11 @@ class DQN:
         else:
             state = torch.tensor([state], dtype=torch.float).to(self.device)
             action = self.q_net(state).argmax().item()
+        return action
+    
+    def take_action_show(self, state):  # 贪婪策略采取动作
+        state = torch.tensor([state], dtype=torch.float).to(self.device)
+        action = self.q_net(state).argmax().item()
         return action
 
     def update(self, transition_dict):
@@ -149,3 +154,28 @@ for i in range(10):
                     '%.3f' % np.mean(return_list[-10:])
                 })
             pbar.update(1)
+            
+            
+episodes_list = list(range(len(return_list)))
+plt.plot(episodes_list, return_list)
+plt.xlabel('Episodes')
+plt.ylabel('Returns')
+plt.title('DQN on {}'.format(env_name))
+plt.show()
+
+mv_return = rl_utils.moving_average(return_list, 9)
+plt.plot(episodes_list, mv_return)
+plt.xlabel('Episodes')
+plt.ylabel('Returns')
+plt.title('DQN on {}'.format(env_name))
+plt.show()
+
+#动画演示
+for i in range(20):
+    state = env.reset()
+    done = False
+    while not done:
+        env.render()
+        action = agent.take_action_show(state)
+        state, _, done, _ = env.step(action)
+env.close()
